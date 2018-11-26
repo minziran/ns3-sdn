@@ -31,10 +31,11 @@ CODENAME=Unknown
 ARCH=`uname -m`
 if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi
 if [ "$ARCH" = "i686" ]; then ARCH="i386"; fi
+if [ "$ARCH" = "armv71"]; then ARCH="armhf"; fi
 
 test -e /etc/debian_version && DIST="Debian"
 grep Ubuntu /etc/lsb-release &> /dev/null && DIST="Ubuntu"
-if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ]; then
+if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Debian" ] || ["$DIST" = "Raspbian"]; then
     install='sudo apt-get -y install'
     remove='sudo apt-get -y remove'
     pkginst='sudo dpkg -i'
@@ -65,8 +66,8 @@ echo "Detected Linux distribution: $DIST $RELEASE $CODENAME $ARCH"
 KERNEL_NAME=`uname -r`
 KERNEL_HEADERS=kernel-headers-${KERNEL_NAME}
 
-if ! echo $DIST | egrep 'Ubuntu|Debian|Fedora'; then
-    echo "Install.sh currently only supports Ubuntu, Debian and Fedora."
+if ! echo $DIST | egrep 'Ubuntu|Debian|Fedora|Raspbian'; then
+    echo "Install.sh currently only supports Ubuntu, Debian, Fedora and Raspbian."
     exit 1
 fi
 
@@ -103,7 +104,8 @@ function detect_os {
     fi
 
     grep Ubuntu /etc/lsb-release &> /dev/null && DIST="Ubuntu"
-    if [ "$DIST" = "Ubuntu" ] ; then
+    grep Raspbian /etc/os-release &> /dev/null && DIST="Raspbian"
+    if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Raspbian" ]; then
         install='apt-get -y install'
         remove='apt-get -y remove'
         pkginst='dpkg -i'
@@ -134,7 +136,7 @@ function enviroment {
         systemctl stop firewalld.service
         systemctl disable firewalld.service
     fi
-    if [ "$DIST" = "Ubuntu" ] ; then
+    if [ "$DIST" = "Ubuntu" ] ||[ "$DIST" = "Raspbian" ]; then
         $install gcc g++ python python-dev make cmake gcc-4.8-multilib g++-4.8-multilib \
         python-setuptools unzip curl build-essential debhelper make autoconf automake \
         patch dpkg-dev libssl-dev libncurses5-dev libpcre3-dev graphviz python-all \
@@ -163,7 +165,7 @@ function pygccxml {
         sed -e "s/gccxml\_path=''/gccxml\_path='\/usr\/local\/bin'/" -i /usr/lib/python2.7/site-packages/pygccxml/parser/config.py
     fi
 
-    if [ "$DIST" = "Ubuntu" ]; then
+    if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Raspbian"]; then
         sed -e "s/gccxml_path=''/gccxml_path='\/usr\/local\/bin'/" -i /usr/local/lib/python2.7/dist-packages/pygccxml/parser/config.py
     fi
 
@@ -213,6 +215,20 @@ function ns3 {
 	echo "depencies for Ubuntu OK"
     
     fi
+
+    if [ "$DIST" = "Raspbian" ] ; then
+    echo "depencies for Raspbian"
+    $install gcc g++ python python-dev qt4-dev-tools mercurial bzr cmake \
+    libc6-dev libc6-dev-i386 g++-multilib gdb valgrind gsl-bin libgsl0-dev \
+    libgsl0ldbl flex bison libfl-dev tcpdump sqlite sqlite3 libsqlite3-dev \
+    libxml2 libxml2-dev libgtk2.0-0 libgtk2.0-dev uncrustify python-pygraphviz \
+    python-kiwi python-pygoocanvas libgoocanvas-dev vtun lxc bridge-utils uml-utilities \
+    doxygen graphviz imagemagick texlive texlive-extra-utils \
+    texlive-latex-extra python-sphinx dia gnuplot plotdrop
+    echo "depencies for Raspbian OK"
+    
+    fi
+    
     
  #   rm -rf  ns-3-allinone
  #   if wget https://www.nsnam.org/release/ns-allinone-$NS3_VERSION.tar.bz2  2> /dev/null; then    
@@ -294,7 +310,7 @@ function openvswitch {
 #        /etc/init.d/openvswitch start
 #    fi
 
-	if [ "$DIST" = "Ubuntu" ]; then
+	if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Raspbian" ]; then
 	# apt-get update
 	$install -y git automake autoconf gcc uml-utilities build-essential git pkg-config linux-headers-`uname -r` \
 				fakeroot debhelper libtool automake libssl-dev pkg-config bzip2 openssl python-all procps python-qt4 \
@@ -572,7 +588,7 @@ function patches {
     patch -p1 < netanim.patch
     patch -p1 < ns-3-wifi.patch   
     
-    if [ "$DIST" = "Ubuntu" ]; then
+    if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Raspbian" ]; then
         sed -e "s/\['network'\]/\['internet', 'network', 'core'\]/" -i src/tap-bridge/wscript
     fi
 
@@ -633,7 +649,7 @@ function opennet {
 #   patch -p1 < netanim-python.patch
 #    patch -p1 < sta-wifi-scan.patch
 
-    if [ "$DIST" = "Ubuntu" ]; then
+    if [ "$DIST" = "Ubuntu" ] || [ "$DIST" = "Raspbian" ]; then
         sed -e "s/\['network'\]/\['internet', 'network', 'core'\]/" -i src/tap-bridge/wscript
     fi
 
